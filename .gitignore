@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+venv/
+.venv/
+
+# ML artifacts / outputs
+runs/
+outputs/
+*.pt
+*.pth
+
+# Datasets and data
+datasets/
+data/
+
+# OS/editor
+.DS_Store
+.vscode/
