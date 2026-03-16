@@ -1,57 +1,72 @@
 from ultralytics import YOLO
 import cv2
 import csv
+import sys
 from pathlib import Path
 
-VIDEO_PATH = "data/raw_videos/session9.MOV"
-WEIGHTS = "runs/detect/train1/weights/best.pt"
-OUT_CSV = "outputs/session9_track.csv"
+ROOT = Path(__file__).resolve().parents[1]
+WEIGHTS = ROOT / "runs" / "detect" / "train1" / "weights" / "best.pt"
 CONF = 0.25
 
-model = YOLO(WEIGHTS)
 
-cap = cv2.VideoCapture(VIDEO_PATH)
-if not cap.isOpened():
-    raise RuntimeError(f"Could not open video: {VIDEO_PATH}")
+def main():
+    if len(sys.argv) < 3:
+        raise RuntimeError("Usage: python export_track_csv.py <input_video> <output_csv>")
 
-fps = cap.get(cv2.CAP_PROP_FPS)
-Path("outputs").mkdir(exist_ok=True)
+    video_path = sys.argv[1]
+    out_csv = sys.argv[2]
 
-rows = []
-frame_idx = 0
+    if not WEIGHTS.exists():
+        raise FileNotFoundError(f"Model weights not found: {WEIGHTS}")
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+    model = YOLO(str(WEIGHTS))
 
-    res = model.predict(frame, conf=CONF, verbose=False)[0]
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Could not open video: {video_path}")
 
-    best = None
-    best_conf = -1
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    Path(out_csv).parent.mkdir(parents=True, exist_ok=True)
 
-    if res.boxes is not None and len(res.boxes) > 0:
-        for b in res.boxes:
-            conf = float(b.conf[0].cpu().numpy())
-            if conf > best_conf:
-                best_conf = conf
-                best = b
+    rows = []
+    frame_idx = 0
 
-    if best is None:
-        rows.append([frame_idx, frame_idx / fps, "", "", ""])
-    else:
-        x1, y1, x2, y2 = best.xyxy[0].cpu().numpy()
-        cx = (x1 + x2) / 2
-        cy = (y1 + y2) / 2
-        rows.append([frame_idx, frame_idx / fps, cx, cy, best_conf])
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-    frame_idx += 1
+        res = model.predict(frame, conf=CONF, verbose=False)[0]
 
-cap.release()
+        best = None
+        best_conf = -1.0
 
-with open(OUT_CSV, "w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["frame", "time_s", "cx", "cy", "conf"])
-    writer.writerows(rows)
+        if res.boxes is not None and len(res.boxes) > 0:
+            for b in res.boxes:
+                conf = float(b.conf[0].cpu().numpy())
+                if conf > best_conf:
+                    best_conf = conf
+                    best = b
 
-print(f"Saved: {OUT_CSV}")
+        if best is None:
+            rows.append([frame_idx, frame_idx / fps, "", "", ""])
+        else:
+            x1, y1, x2, y2 = best.xyxy[0].cpu().numpy()
+            cx = (x1 + x2) / 2
+            cy = (y1 + y2) / 2
+            rows.append([frame_idx, frame_idx / fps, cx, cy, best_conf])
+
+        frame_idx += 1
+
+    cap.release()
+
+    with open(out_csv, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["frame", "time_s", "cx", "cy", "conf"])
+        writer.writerows(rows)
+
+    print(out_csv)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,21 +1,47 @@
+# ======================
 # Python
+# ======================
+
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Virtual env
+# Virtual environments
 venv/
 .venv/
 
-# ML artifacts / outputs
+# ======================
+# Machine Learning
+# ======================
+
 runs/
 outputs/
+
 *.pt
 *.pth
 
-# Datasets and data
+# ======================
+# Data / datasets
+# ======================
+
 datasets/
 data/
 
-# OS/editor
+# ======================
+# Node / backend
+# ======================
+
+node_modules/
+dist/
+
+# Uploaded videos
+server/uploads/
+
+# ======================
+# OS / editors
+# ======================
+
 .DS_Store
+Thumbs.db
 .vscode/
