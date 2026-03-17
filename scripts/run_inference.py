@@ -38,7 +38,7 @@ def main():
 
     Path(out_video).parent.mkdir(parents=True, exist_ok=True)
 
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter_fourcc(*"avc1")
     out = cv2.VideoWriter(out_video, fourcc, fps, (w, h))
 
     frame_idx = 0

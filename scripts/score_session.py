@@ -1,5 +1,6 @@
 import sys
 import json
+import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -7,6 +8,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scoring import ScoreConfig, score_csv
+
+
+def sanitize_for_json(obj):
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_for_json(v) for v in obj]
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+    return obj
 
 
 def main():
@@ -33,6 +45,7 @@ def main():
 
     cfg = ScoreConfig()
     report = score_csv(str(csv_path), cfg)
+    report = sanitize_for_json(report)
 
     out_json.parent.mkdir(parents=True, exist_ok=True)
     with open(out_json, "w") as f:
